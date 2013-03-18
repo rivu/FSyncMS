@@ -4,11 +4,11 @@
 # Version: MPL 1.1/GPL 2.0/LGPL 2.1
 #
 # The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
+# 1.1 (the 'License'); you may not use this file except in compliance with
 # the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
 #
-# Software distributed under the License is distributed on an "AS IS" basis,
+# Software distributed under the License is distributed on an 'AS IS' basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
 # for the specific language governing rights and limitations under the
 # License.
@@ -25,8 +25,8 @@
 #   Luca Tettamanti
 #
 # Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# either the GNU General Public License Version 2 or later (the 'GPL'), or
+# the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
 # in which case the provisions of the GPL or the LGPL are applicable instead
 # of those above. If you wish to allow use of your version of this file only
 # under the terms of either the GPL or the LGPL, and not to allow others to
@@ -38,16 +38,21 @@
 #
 # ***** END LICENSE BLOCK *****
 
-    if ( ! file_exists("settings.php") && file_exists("setup.php") ) {
-        require_once "setup.php";
+    if (!file_exists('settings.php') && file_exists('setup.php'))
+    {
+        require_once 'setup.php';
         exit;
 
-    } else if ( ! file_exists("settings.php") ) {
-        echo "<hr><h2>Maybe the setup is not completed, missing settings.php</h2><hr>"; 
+    }
+    else if (!file_exists('settings.php'))
+    {
+        echo '<hr><h2>Maybe the setup is not completed, missing settings.php</h2><hr>'; 
         exit;
 
-    } else if ( file_exists("setup.php") ) {
-        echo "<hr><h2>Maybe the setup is not completed, else please delete setup.php</h2><hr>"; 
+    }
+    else if (file_exists('setup.php'))
+    {
+        echo '<hr><h2>Maybe the setup is not completed, else please delete setup.php</h2><hr>'; 
         exit;
     }
 
@@ -55,39 +60,50 @@
 	require_once 'weave_basic_object.php';
 	require_once 'weave_utils.php';
 
-    require_once "WBOJsonOutput.php";
-	//header("Content-type: application/json");
+    require_once 'WBOJsonOutput.php';
+	//header('Content-type: application/json');
 
 	$server_time = round(microtime(1), 2);
-	header("X-Weave-Timestamp: " . $server_time);
+	header('X-Weave-Timestamp: ' . $server_time);
 
 	# Basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
 	if (!empty($_SERVER['PATH_INFO']))
+	{
 		$path = $_SERVER['PATH_INFO'];
+	}
 	else if (!empty($_SERVER['ORIG_PATH_INFO']))
+	{
 		$path = $_SERVER['ORIG_PATH_INFO'];
-    else if (!empty($_SERVER["REQUEST_URI"]))
+	}
+    else if (!empty($_SERVER['REQUEST_URI']))
     {
-        log_error("experimental path");
+        log_error('experimental path');
         # this is kind of an experimental try, i needed it so i build it,
         # but that doesent mean that it does work... well it works for me
         # and it shouldnt break anything...
-        $path = $_SERVER["REQUEST_URI"];
-        $lastfolder = substr(FSYNCMS_ROOT,strrpos(FSYNCMS_ROOT, "/",-2));
+        $path = $_SERVER['REQUEST_URI'];
+        $lastfolder = substr(FSYNCMS_ROOT, strrpos(FSYNCMS_ROOT, '/', -2));
         $path = substr($path, (strpos($path,$lastfolder) + strlen($lastfolder)-1)); #chop the lead slash
-        if(strpos($path,'?') != false)
+        if (strpos($path,'?') != false)
+        {
             $path = substr($path, 0, strpos($path,'?')); //remove php arguments
-        log_error("path_exp:".$path);
+        }
+        log_error('path_exp: '.$path);
     } 
     else
-		report_problem("No path found", 404);
+    {
+		report_problem('No path found', 404);
+	}
     
 	$path = substr($path, 1); #chop the lead slash
-	log_error("start request_____" . $path); 
+	log_error('start request_____'.$path);
+	
     // ensure that we got a valid request
-    if ( !$path ) 
-        report_problem("Invalid request, this was not a firefox sync request!", 400);
+    if (!$path)
+    {
+        report_problem('Invalid request, this was not a firefox sync request!', 400);
+    }
 
     // split path into parts and make sure that all values are properly initialized
     list($version, $username, $function, $collection, $id) = array_pad(explode('/', $path.'///'), 5, '');
@@ -100,30 +116,42 @@
         exit(); // should not get here, but how knows
     }
 
-    header("Content-type: application/json"); 
+    header('Content-type: application/json'); 
     
 	if ($version != '1.0' && $version != '1.1')
+	{
 		report_problem('Function not found', 404);
+	}
 
-	if ($function != "info" && $function != "storage")
+	if ($function != 'info' && $function != 'storage')
+	{
 		report_problem(WEAVE_ERROR_FUNCTION_NOT_SUPPORTED, 400);
+	}
 
 	if (!validate_username($username))
+	{
 		report_problem(WEAVE_ERROR_INVALID_USERNAME, 400);
+	}
 
 	#only a delete has meaning without a collection
 	if ($collection)
 	{
 		if (!validate_collection($collection))
+		{
 			report_problem(WEAVE_ERROR_INVALID_COLLECTION, 400);
+		}
 	}
 	else if ($_SERVER['REQUEST_METHOD'] != 'DELETE')
+	{
 		report_problem(WEAVE_ERROR_INVALID_PROTOCOL, 400);
+	}
 
 
 	#quick check to make sure that any non-storage function calls are just using GET
 	if ($function != 'storage' && $_SERVER['REQUEST_METHOD'] != 'GET')
+	{
 		report_problem(WEAVE_ERROR_INVALID_PROTOCOL, 400);
+	}
 
 
 
@@ -161,7 +189,7 @@
 			}
 			elseif ($function == 'storage')
 			{
-                log_error("function storage");
+                log_error('function storage');
 				if ($id) #retrieve a single record
 				{
 					$wbo = $db->retrieve_objects($collection, $id, 1); #get the full contents of one record
@@ -171,11 +199,13 @@
 						echo $item->json();
 					}
 					else
-						report_problem("record not found", 404);
+					{
+						report_problem('record not found', 404);
+					}
 				}
 				else #retrieve a batch of records. Sadly, due to potential record sizes, have the storage object stream the output...
 				{
-                    log_error("retrieve a batch");
+                    log_error('retrieve a batch');
 					$full = array_key_exists('full', $_GET) && $_GET['full'];
 
 					$outputter = new WBOJsonOutput($full);
@@ -197,13 +227,18 @@
 		{
 			$wbo = new wbo();
 			if (!$wbo->extract_json(get_json()))
+			{
 				report_problem(WEAVE_ERROR_JSON_PARSE, 400);
+			}
 
 			check_quota($db);
 			check_timestamp($collection, $db);
 
 			#use the url if the json object doesn't have an id
-			if (!$wbo->id() && $id) { $wbo->id($id); }
+			if (!$wbo->id() && $id)
+			{
+				$wbo->id($id);
+			}
 
 			$wbo->collection($collection);
 			$wbo->modified($server_time); #current microtime
@@ -212,9 +247,13 @@
 			{
 				#if there's no payload (as opposed to blank), then update the metadata
 				if ($wbo->payload_exists())
+				{
 					$db->store_object($wbo);
+				}
 				else
+				{
 					$db->update_object($wbo);
+				}
 			}
 			else
 			{
@@ -289,19 +328,23 @@
 								$params['limit'], $params['offset'],
 								$params['ids'],
 								$params['index_above'], $params['index_below']
-							);
+				);
 			}
             else if($function == 'storage') // ich vermute mal storage reinigen
             {
                 if (!array_key_exists('HTTP_X_CONFIRM_DELETE', $_SERVER))
+                {
                      report_problem(WEAVE_ERROR_NO_OVERWRITE, 412);
+                }
                 $db->delete_storage($username);
             }
 			else
 			{ 
 				if (!array_key_exists('HTTP_X_CONFIRM_DELETE', $_SERVER))
+				{
 					report_problem(WEAVE_ERROR_NO_OVERWRITE, 412);
-                log_error("delete "."Server ".print_r( $_SERVER, true));
+				}
+                log_error('delete '.'Server '.print_r( $_SERVER, true));
 				$db->delete_user($username);
 			}
 
@@ -318,11 +361,4 @@
 	{
 		report_problem($e->getMessage(), $e->getCode());
 	}
-
-
-#The datasets we might be dealing with here are too large for sticking it all into an array, so
-#we need to define a direct-output method for the storage class to use. If we start producing multiples
-#(unlikely), we can put them in their own class.
-
-#include_once "WBOJsonOutput.php";
 ?>

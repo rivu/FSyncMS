@@ -4,11 +4,11 @@
 # Version: MPL 1.1/GPL 2.0/LGPL 2.1
 #
 # The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
+# 1.1 (the 'License'); you may not use this file except in compliance with
 # the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
 #
-# Software distributed under the License is distributed on an "AS IS" basis,
+# Software distributed under the License is distributed on an 'AS IS' basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
 # for the specific language governing rights and limitations under the
 # License.
@@ -24,8 +24,8 @@
 #	Toby Elliott (telliott@mozilla.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# either the GNU General Public License Version 2 or later (the 'GPL'), or
+# the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
 # in which case the provisions of the GPL or the LGPL are applicable instead
 # of those above. If you wish to allow use of your version of this file only
 # under the terms of either the GPL or the LGPL, and not to allow others to
@@ -51,39 +51,50 @@ class WeaveStorage
 
         $this->_username = $username;
 
-        log_error("Initalizing DB connecion!");
-
+        log_error('Initalizing DB connecion!');
+        
         try 
         {
-            if ( ! MYSQL_ENABLE ) 
-            {
-                $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
-                $db_name = SQLITE_FILE;
-                array_pop($path);
-                array_push($path, $db_name);
-                $db_name = implode('/', $path);
+        
+        	switch ( DATABASE_ENGINE )
+        	{
+        		case 'PGSQL': 
+        		{
+		            log_error('Starting PostgreSQL connection');
+		            $this->_dbh = new PDO('pgsql:host='. DATABASE_HOST .';dbname='. DATABASE_DB, DATABASE_USER, DATABASE_PASSWORD);
+        			break;
+        		}
+        		case 'MYSQL': 
+        		{
+		            log_error('Starting MySQL connection');
+		            $this->_dbh = new PDO('mysql:host='. DATABASE_HOST .';dbname='. DATABASE_DB, DATABASE_USER, DATABASE_PASSWORD);
+        			break;
+        		}
+        		case 'SQLITE': 
+        		{
+		            $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
+		            $db_name = SQLITE_FILE;
+		            array_pop($path);
+		            array_push($path, $db_name);
+		            $db_name = implode('/', $path);
 
-                if ( ! file_exists($db_name) ) 
-                {
-                    log_error("The required sqllite database is not present! $db_name");
-                }
+		            if ( ! file_exists($db_name) ) 
+		            {
+		                log_error('The required sqlite database is not present! $db_name');
+		            }
 
-                log_error("Starting SQLite connection");
-                $this->_dbh = new PDO('sqlite:' . $db_name);
-                $this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            } 
-            else if ( MYSQL_ENABLE ) 
-            {
-                log_error("Starting MySQL connection");
-                $this->_dbh = new PDO("mysql:host=". MYSQL_HOST .";dbname=". MYSQL_DB, MYSQL_USER, MYSQL_PASSWORD);
-            }
+		            log_error('Starting SQLite connection');
+		            $this->_dbh = new PDO('sqlite:' . $db_name);
+		            $this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        			break;
+        		}
+        	}
 
-        } 
-
-        catch( PDOException $exception ) 
+        }
+        catch (PDOException $exception) 
         {
-            log_error("database unavailable " . $exception->getMessage());
-            throw new Exception("Database unavailable " . $exception->getMessage() , 503);
+            log_error('database unavailable ' . $exception->getMessage());
+            throw new Exception('Database unavailable ' . $exception->getMessage() , 503);
         }
 
     }
@@ -99,10 +110,10 @@ class WeaveStorage
         {
             $this->_dbh->beginTransaction();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("begin_transaction: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('begin_transaction: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         return 1;
     }
@@ -128,10 +139,10 @@ class WeaveStorage
             $sth->bindParam(':collection', $collection);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_max_timestamp: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_max_timestamp: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         $result = $sth->fetchColumn();
@@ -147,10 +158,10 @@ class WeaveStorage
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_collection_list: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_collection_list: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
 
@@ -173,10 +184,10 @@ class WeaveStorage
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_collection_list: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_collection_list: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         $collections = array();
@@ -197,10 +208,10 @@ class WeaveStorage
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_collection_list_with_counts: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_collection_list_with_counts: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
 
@@ -213,50 +224,81 @@ class WeaveStorage
         return $collections;
     }
 
+
     function store_object(&$wbo)
     {
+    	//object already exists -> update
+		if ($this->exists_object($wbo->collection(), $wbo->id()))
+		{
+			return $this->update_object($wbo);
+		}
+		//-> insert
+		else
+		{
+			return $this->create_object($wbo);
+		}
+	}
 
+
+	function create_object(&$wbo)
+	{
         try
         {
-            $insert_stmt = 'replace into wbo (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
-                values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size)';
+		    $insert_stmt = 'insert into wbo (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
+		            values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size)';
             $sth = $this->_dbh->prepare($insert_stmt);
-
-            $username = $this->_username;
-            $id = $wbo->id();
-            $collection = $wbo->collection();
-            $parentid = $wbo->parentid();
-            $predecessorid = $wbo->predecessorid();
-            $sortindex = $wbo->sortindex();
-            $modified = $wbo->modified();
-            $payload = $wbo->payload();
-            $payload_size = $wbo->payload_size();
-
-            $sth->bindParam(':username', $username);
-            $sth->bindParam(':id', $id);
-            $sth->bindParam(':collection', $collection);
-            $sth->bindParam(':parentid', $parentid);
-            $sth->bindParam(':predecessorid', $predecessorid);
-            $sth->bindParam(':sortindex', $sortindex);
-            $sth->bindParam(':modified', $modified);
-            $sth->bindParam(':payload', $payload);
-            $sth->bindParam(':payload_size', $payload_size);
-
+		    $sth->bindParam(':username', $this->_username);
+		    $sth->bindParam(':id', $wbo->id());
+		    $sth->bindParam(':collection', $wbo->collection());
+		    $sth->bindParam(':parentid', $wbo->parentid());
+		    $sth->bindParam(':predecessorid', $wbo->predecessorid());
+		    $sth->bindParam(':sortindex', $wbo->sortindex());
+		    $sth->bindParam(':modified', $wbo->modified());
+		    $sth->bindParam(':payload', $wbo->payload());
+		    $sth->bindParam(':payload_size', $wbo->payload_size());
             $sth->execute();
-
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("store_object: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('create_object: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         return 1;
+	}
+	
+	
+    function exists_object($collection, $id)
+    {
+        try
+        {
+            $select_stmt = 'select * from wbo where username = :username and collection = :collection and id = :id';
+            $sth = $this->_dbh->prepare($select_stmt);
+            $username = $this->_username;
+            $sth->bindParam(':username', $username);
+            $sth->bindParam(':collection', $collection);
+            $sth->bindParam(':id', $id);
+            $sth->execute();
+        }
+        catch (PDOException $exception)
+        {
+            error_log('retrieve_object: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
+        }
+
+        if (!$result = $sth->fetch(PDO::FETCH_ASSOC))
+        {
+            return false;
+        }
+        else
+        {
+        	return true;
+        }
     }
 
 
     function update_object(&$wbo)
     {
-        $update = "update wbo set ";
+        $update = 'update wbo set ';
         $params = array();
         $update_list = array();
 
@@ -269,26 +311,26 @@ class WeaveStorage
 
         if ($wbo->parentid_exists())
         {
-            $update_list[] = "parentid = ?";
+            $update_list[] = 'parentid = ?';
             $params[] = $wbo->parentid();
         }
 
         if ($wbo->predecessorid_exists())
         {
-            $update_list[] = "predecessorid = ?";
+            $update_list[] = 'predecessorid = ?';
             $params[] = $wbo->predecessorid();
         }
 
         if ($wbo->sortindex_exists())
         {
-            $update_list[] = "sortindex = ?";
+            $update_list[] = 'sortindex = ?';
             $params[] = $wbo->sortindex();
         }
 
         if ($wbo->payload_exists())
         {
-            $update_list[] = "payload = ?";
-            $update_list[] = "payload_size = ?";
+            $update_list[] = 'payload = ?';
+            $update_list[] = 'payload_size = ?';
             $params[] = $wbo->payload();
             $params[] = $wbo->payload_size();
         }
@@ -299,12 +341,11 @@ class WeaveStorage
 #better make sure we have a modified date. Should have been handled earlier
             if (!$wbo->modified_exists())
             {
-                error_log("Called update_object with no defined timestamp. Please check");
+                error_log('Called update_object with no defined timestamp. Please check');
                 $wbo->modified(microtime(1));
             }
-            $update_list[] = "modified = ?";
+            $update_list[] = 'modified = ?';
             $params[] = $wbo->modified();
-
         }
 
 
@@ -313,9 +354,9 @@ class WeaveStorage
             return 0;
         }
 
-        $update .= join($update_list, ",");
+        $update .= join($update_list, ',');
 
-        $update .= " where username = ? and collection = ? and id = ?";
+        $update .= ' where username = ? and collection = ? and id = ?';
         $params[] = $this->_username;
         $params[] = $wbo->collection();
         $params[] = $wbo->id();
@@ -325,13 +366,14 @@ class WeaveStorage
             $sth = $this->_dbh->prepare($update);
             $sth->execute($params);
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("update_object: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('update_object: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         return 1;
     }
+
 
     function delete_object($collection, $id)
     {
@@ -345,10 +387,10 @@ class WeaveStorage
             $sth->bindParam(':id', $id);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("delete_object: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('delete_object: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         return 1;
     }
@@ -371,84 +413,84 @@ class WeaveStorage
                 return 1; #nothing to delete
             }
             $paramqs = array();
-            $select_stmt = "delete from wbo where username = ? and collection = ? and id in (" . join(", ", array_pad($paramqs, count($params), '?')) . ")";
+            $select_stmt = 'delete from wbo where username = ? and collection = ? and id in (' . join(', ', array_pad($paramqs, count($params), '?')) . ')';
             array_unshift($params, $collection);
             array_unshift($params, $username);
         }
         else
         {
 
-            $select_stmt = "delete from wbo where username = ? and collection = ?";
+            $select_stmt = 'delete from wbo where username = ? and collection = ?';
             $params[] = $this->_username;
             $params[] = $collection;
 
 
             if ($id)
             {
-                $select_stmt .= " and id = ?";
+                $select_stmt .= ' and id = ?';
                 $params[] = $id;
             }
 
             if ($ids && count($ids) > 0)
             {
                 $qmarks = array();
-                $select_stmt .= " and id in (";
+                $select_stmt .= ' and id in (';
                 foreach ($ids as $temp)
                 {
                     $params[] = $temp;
                     $qmarks[] = '?';
                 }
-                $select_stmt .= implode(",", $qmarks);
+                $select_stmt .= implode(',', $qmarks);
                 $select_stmt .= ')';
             }
 
             if ($parentid)
             {
-                $select_stmt .= " and parentid = ?";
+                $select_stmt .= ' and parentid = ?';
                 $params[] = $parentid;
             }
 
             if ($predecessorid)
             {
-                $select_stmt .= " and predecessorid = ?";
+                $select_stmt .= ' and predecessorid = ?';
                 $params[] = $parentid;
             }
 
             if ($index_above)
             {
-                $select_stmt .= " and sortindex > ?";
+                $select_stmt .= ' and sortindex > ?';
                 $params[] = $parentid;
             }
 
             if ($index_below)
             {
-                $select_stmt .= " and sortindex < ?";
+                $select_stmt .= ' and sortindex < ?';
                 $params[] = $parentid;
             }
 
             if ($newer)
             {
-                $select_stmt .= " and modified > ?";
+                $select_stmt .= ' and modified > ?';
                 $params[] = $newer;
             }
 
             if ($older)
             {
-                $select_stmt .= " and modified < ?";
+                $select_stmt .= ' and modified < ?';
                 $params[] = $older;
             }
 
             if ($sort == 'index')
             {
-                $select_stmt .= " order by sortindex desc";
+                $select_stmt .= ' order by sortindex desc';
             }
             else if ($sort == 'newest')
             {
-                $select_stmt .= " order by modified desc";
+                $select_stmt .= ' order by modified desc';
             }
             else if ($sort == 'oldest')
             {
-                $select_stmt .= " order by modified";
+                $select_stmt .= ' order by modified';
             }
 
         }
@@ -458,13 +500,14 @@ class WeaveStorage
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->execute($params);
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("delete_objects: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('delete_objects: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         return 1;
     }
+
 
     function retrieve_object($collection, $id)
     {
@@ -478,10 +521,10 @@ class WeaveStorage
             $sth->bindParam(':id', $id);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("retrieve_object: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('retrieve_object: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         $result = $sth->fetch(PDO::FETCH_ASSOC);
@@ -499,86 +542,86 @@ class WeaveStorage
         $full_list = $full ? '*' : 'id';
 
 
-        $select_stmt = "select $full_list from wbo where username = ? and collection = ?";
+        $select_stmt = 'select '.$full_list.' from wbo where username = ? and collection = ?';
         $params[] = $this->_username;
         $params[] = $collection;
 
 
         if ($id)
         {
-            $select_stmt .= " and id = ?";
+            $select_stmt .= ' and id = ?';
             $params[] = $id;
         }
 
         if ($ids && count($ids) > 0)
         {
             $qmarks = array();
-            $select_stmt .= " and id in (";
+            $select_stmt .= ' and id in (';
             foreach ($ids as $temp)
             {
                 $params[] = $temp;
                 $qmarks[] = '?';
             }
-            $select_stmt .= implode(",", $qmarks);
+            $select_stmt .= implode(',', $qmarks);
             $select_stmt .= ')';
         }
 
         if ($parentid)
         {
-            $select_stmt .= " and parentid = ?";
+            $select_stmt .= ' and parentid = ?';
             $params[] = $parentid;
         }
 
 
         if ($predecessorid)
         {
-            $select_stmt .= " and predecessorid = ?";
+            $select_stmt .= ' and predecessorid = ?';
             $params[] = $predecessorid;
         }
 
         if ($index_above)
         {
-            $select_stmt .= " and sortindex > ?";
+            $select_stmt .= ' and sortindex > ?';
             $params[] = $parentid;
         }
 
         if ($index_below)
         {
-            $select_stmt .= " and sortindex < ?";
+            $select_stmt .= ' and sortindex < ?';
             $params[] = $parentid;
         }
 
         if ($newer)
         {
-            $select_stmt .= " and modified > ?";
+            $select_stmt .= ' and modified > ?';
             $params[] = $newer;
         }
 
         if ($older)
         {
-            $select_stmt .= " and modified < ?";
+            $select_stmt .= ' and modified < ?';
             $params[] = $older;
         }
 
         if ($sort == 'index')
         {
-            $select_stmt .= " order by sortindex desc";
+            $select_stmt .= ' order by sortindex desc';
         }
         else if ($sort == 'newest')
         {
-            $select_stmt .= " order by modified desc";
+            $select_stmt .= ' order by modified desc';
         }
         else if ($sort == 'oldest')
         {
-            $select_stmt .= " order by modified";
+            $select_stmt .= ' order by modified';
         }
 
         if ($limit)
         {
-            $select_stmt .= " limit " . intval($limit);
+            $select_stmt .= ' limit ' . intval($limit);
             if ($offset)
             {
-                $select_stmt .= " offset " . intval($offset);
+                $select_stmt .= ' offset ' . intval($offset);
             }
         }
 
@@ -587,10 +630,10 @@ class WeaveStorage
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->execute($params);
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("retrieve_collection: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('retrieve_collection: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         if ($direct_output)
@@ -606,10 +649,13 @@ class WeaveStorage
                 $ids[] = $wbo;
             }
             else
+            {
                 $ids[] = $result{'id'};
+            }
         }
         return $ids;
     }
+
 
     function get_storage_total()
     {
@@ -621,14 +667,15 @@ class WeaveStorage
             $sth->bindParam(':username', $username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_storage_total: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_storage_total: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         return (int)$sth->fetchColumn();
     }
+
 
     function get_collection_storage_totals()
     {
@@ -640,10 +687,10 @@ class WeaveStorage
             $sth->bindParam(':username', $username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("get_storage_total (" . $this->connection_details_string() . "): " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('get_storage_total (' . $this->connection_details_string() . '): ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
         $results = $sth->fetchAll(PDO::FETCH_NUM);
         $sth->closeCursor();
@@ -659,15 +706,16 @@ class WeaveStorage
 
     function get_user_quota()
     {
+    	log_error('get_user_quota: not implemented');
         return null;
     }
 
     function delete_storage($username)
     {
-        log_error("delete storage");
+        log_error('delete storage');
         if (!$username)
         {
-            throw new Exception("3", 404);
+            throw new Exception('3', 404);
         }
         try
         {
@@ -677,9 +725,9 @@ class WeaveStorage
             $sth->execute();
             $sth->closeCursor();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         { 
-            error_log("delete_user: " . $exception->getMessage());
+            error_log('delete_user: ' . $exception->getMessage());
             return 0;
         } 
         return 1;
@@ -688,10 +736,10 @@ class WeaveStorage
 
     function delete_user($username)
     {
-        log_error("delete User");
+        log_error('delete user');
         if (!$username)
         {
-            throw new Exception("3", 404);
+            throw new Exception('3', 404);
         }
 
         try
@@ -708,9 +756,9 @@ class WeaveStorage
             $sth->execute();
 
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("delete_user: " . $exception->getMessage());
+            error_log('delete_user: ' . $exception->getMessage());
             return 0;
         }
         return 1;
@@ -718,11 +766,11 @@ class WeaveStorage
 
     function create_user($username, $password)
     {
-        log_error("Create User - Username: ".$username."|".$password);
+        log_error('Create User - Username: '.$username.'|'.$password);
 
         try
         {
-            $create_statement = "insert into users values (:username, :md5)";
+            $create_statement = 'insert into users values (:username, :md5)';
 
             $sth = $this->_dbh->prepare($create_statement);
             $password = md5($password);
@@ -730,10 +778,10 @@ class WeaveStorage
             $sth->bindParam(':md5', $password);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            log_error("create_user:" . $exception->getMessage());
-            error_log("create_user:" . $exception->getMessage());
+            log_error('create_user: '.$exception->getMessage());
+            error_log('create_user: '.$exception->getMessage());
             return 0;
         }
         return 1;
@@ -743,7 +791,7 @@ class WeaveStorage
     {
         try
         {
-            $update_statement = "update users set md5 = :md5 where username = :username";
+            $update_statement = 'update users set md5 = :md5 where username = :username';
 
             $sth = $this->_dbh->prepare($update_statement);
             $password = md5($password);
@@ -751,9 +799,9 @@ class WeaveStorage
             $sth->bindParam(':md5', $password);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            log_error("change_password:" . $exception->getMessage());
+            log_error('change_password: '.$exception->getMessage());
             return 0;
         }
         return 1;
@@ -770,10 +818,10 @@ class WeaveStorage
             $sth->bindParam(':username', $username);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("exists_user: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('exists_user: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         if (!$result = $sth->fetch(PDO::FETCH_ASSOC))
@@ -786,7 +834,7 @@ class WeaveStorage
 
     function authenticate_user($password)
     {
-        log_error("auth-user: " . $this->_username);
+        log_error('auth-user: ' . $this->_username);
         try
         {
             $select_stmt = 'select username from users where username = :username and md5 = :md5';
@@ -797,10 +845,10 @@ class WeaveStorage
             $sth->bindParam(':md5', $password);
             $sth->execute();
         }
-        catch( PDOException $exception )
+        catch (PDOException $exception)
         {
-            error_log("authenticate_user: " . $exception->getMessage());
-            throw new Exception("Database unavailable", 503);
+            error_log('authenticate_user: ' . $exception->getMessage());
+            throw new Exception('Database unavailable', 503);
         }
 
         if (!$result = $sth->fetch(PDO::FETCH_ASSOC))

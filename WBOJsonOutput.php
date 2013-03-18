@@ -86,7 +86,7 @@ class WBOJsonOutput
 		{
 			return $this->output_newlines($sth);
 		}
-		elseif ($this->_output_format == 'whoisi')
+		else if ($this->_output_format == 'whoisi')
 		{
 			return $this->output_whoisi($sth);
 		}
@@ -102,7 +102,15 @@ class WBOJsonOutput
 
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
 		{
-			if ($this->_comma_flag) { echo ','; } else { $this->_comma_flag = 1; }
+			if ($this->_comma_flag)
+			{
+				echo ',';
+			}
+			else
+			{
+				$this->_comma_flag = 1;
+			}
+			
 			if ($this->_full)
 			{
 				$wbo = new wbo();
@@ -110,7 +118,9 @@ class WBOJsonOutput
 				echo $wbo->json();
 			}
 			else
+			{
 				echo json_encode($result{'id'});
+			}
 		}
 
 		echo ']';
@@ -128,7 +138,9 @@ class WBOJsonOutput
 				$output = $wbo->json();
 			}
 			else
+			{
 				$output = json_encode($result{'id'});
+			}
 			echo pack('N', mb_strlen($output, '8bit')) . $output;
 		}
 		return 1;
@@ -145,7 +157,9 @@ class WBOJsonOutput
 				echo preg_replace('/\n/', '\u000a', $wbo->json());
 			}
 			else
+			{
 				echo json_encode($result{'id'});
+			}
 			echo "\n";
 		}
 		return 1;
