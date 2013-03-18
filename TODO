@@ -1,4 +1,4 @@
 == SOME TODOS ==
 
-- Ein Präfix für die Tabellen, damit sie in eine vorhandene DB gelegt werden können.
-- PostgreSQL support
+(done) Ein Präfix für die Tabellen, damit sie in eine vorhandene DB gelegt werden können.
+- PostgreSQL support (especially setup.php)
