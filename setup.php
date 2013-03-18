@@ -21,6 +21,7 @@
 # the Initial Developer. All Rights Reserved.
 # 
 # Contributor(s):
+# Tobias Hollerung (tobias@hollerung.eu)
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -46,7 +47,8 @@ $dbUser = null;
 $dbName = null;
 $dbPass = null;
 $dbHost = null;
-
+$dbTablePrefix = null;
+$dbFilename = null;
 
 // --------------------------------------------
 // variables end
@@ -86,6 +88,16 @@ if (isset($_POST['dbpass']))
     $dbPass = check_input($_POST['dbpass']);
 }
 
+if (isset($_POST['dbtableprefix']))
+{
+    $dbTablePrefix = check_input($_POST['dbtableprefix']);
+}
+
+if (isset($_POST['dbfilename']))
+{
+    $dbFileName = check_input($_POST['dbfilename']);
+}
+
 // --------------------------------------------
 // post handling end
 // --------------------------------------------
@@ -111,7 +123,7 @@ function check_input( $data )
     create the config file with the database type
     and the given connection credentials
 */
-function write_config_file($dbt, $dbh, $dbn, $dbu, $dbp, $fsRoot)
+function write_config_file($dbt, $dbh, $dbn, $dbu, $dbp, $fsRoo, $dbtp, $dbf)
 {
 
     // construct the name of config file
@@ -143,7 +155,7 @@ function write_config_file($dbt, $dbh, $dbn, $dbu, $dbp, $fsRoot)
 
     $cfg_content .= "    // Database connection credentials\n";
     $cfg_content .= "    // \n";
-    $cfg_content .= "    define(\"SQLITE_FILE\", \"weave_db\");\n";
+    $cfg_content .= "    define(\"SQLITE_FILE\", \"$dbf\");\n";
     if($dbt != "mysql")
     {
         $cfg_content .= "    define(\"MYSQL_ENABLE\", false);\n";
@@ -161,6 +173,9 @@ function write_config_file($dbt, $dbh, $dbn, $dbu, $dbp, $fsRoot)
         $cfg_content .= "    define(\"MYSQL_PASSWORD\", \"$dbp\");\n";
     }
 
+    $cfg_content .= "    \n";
+    $cfg_content .= "    define(\"DATABASE_TABLE_PREFIX\", \"$dbtp\");\n";
+    
     $cfg_content .= "\n?>\n";
 
     // now write everything
@@ -193,7 +208,29 @@ function print_footer()
     print '</form></body></html>';
 }
 
-
+/*
+    print the html for the sqlite database file details
+*/
+function ptint_sqlite_settings_form()
+{
+    print_header("SQLite database settings setup");
+    print 'SQLite database settings setup
+    <table>
+        <tr>
+            <td>File Name</td>
+            <td><input type="text" name="dbfilename" value="weave_db"></td>
+        </tr>
+        <tr>
+            <td>Table Prefix</td>
+            <td><input type="text" name=dbtableprefix</td>
+        </tr>
+    </table>
+    
+    <input type="hidden" name="action" value="step2">
+    <input type="hidden" name="dbType" value="mysql">
+    <p><input type="submit" value="OK"></p>';
+    print_footer();
+}
 /*
     print the html for for the mysql connection credentials
 */
@@ -218,10 +255,14 @@ function print_mysql_connection_form()
             <td>Password</td>
             <td><input type="password" name="dbpass" /></td>
         </tr>
+        <tr>
+            <td>Table Prefix</td>
+            <td><input type="text" name="dbtableprefix" /></td>
+        </tr>
     </table>
 
     <input type="hidden" name="action" value="step2">
-    <input type="hidden" name="dbType" value="mysql">
+    <input type="hidden" name="dbType" value="sqlite">
     <p><input type="submit" value="OK"></p>';
     print_footer();
 }
@@ -302,7 +343,7 @@ function print_mysql_connection_form()
 		switch ($dbType)
 		{
 		    case "sqlite":
-		        $action = "step2";
+		        print_sqlite_settings_form();
 		        break;
 
 		    case "mysql":
@@ -331,7 +372,7 @@ function print_mysql_connection_form()
 		    {
 
 		        $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
-		        $db_name = 'weave_db';
+		        $db_name = $dbFileName;
 		        array_pop($path);
 		        array_push($path, $db_name);
 		        $db_name = implode('/', $path);
@@ -350,7 +391,7 @@ function print_mysql_connection_form()
 		    } else if ( $dbType == "mysql" ) {
 
 		        $dbHandle = new PDO("mysql:host=". $dbHost .";dbname=". $dbName, $dbUser, $dbPass);
-		        $select_stmt = "show tables like 'wbo'";
+		        $select_stmt = "show tables like '" . $dbTablePrefix . "wbo'";
 		        $sth = $dbHandle->prepare($select_stmt);
 		        $sth->execute();
 		        $count = $sth->rowCount();
@@ -378,13 +419,13 @@ function print_mysql_connection_form()
 
 		    try
 		    {
-		        $create_statement = " create table wbo ( username varchar(100), id varchar(65), collection varchar(100),
+		        $create_statement = " create table " . $dbTablePrefix . "wbo ( username varchar(100), id varchar(65), collection varchar(100),
 		             parentid  varchar(65), predecessorid int, modified real, sortindex int,
 		             payload text, payload_size int, ttl int, primary key (username,collection,id))";
-		        $create_statement2 = " create table users ( username varchar(255), md5 varchar(64), primary key (username)) ";
-		        $index1 = 'create index parentindex on wbo (username, parentid)';
-		        $index2 = 'create index predecessorindex on wbo (username, predecessorid)';
-		        $index3 = 'create index modifiedindex on wbo (username, collection, modified)';
+		        $create_statement2 = " create table " . $dbTablePrefix . "users ( username varchar(255), md5 varchar(64), primary key (username)) ";
+		        $index1 = 'create index parentindex on " . $dbTablePrefix . "wbo (username, parentid)';
+		        $index2 = 'create index predecessorindex on " . $dbTablePrefix . "wbo (username, predecessorid)';
+		        $index3 = 'create index modifiedindex on " . $dbTablePrefix . "wbo (username, collection, modified)';
 
 		        $sth = $dbHandle->prepare($create_statement);
 		        $sth->execute();
@@ -422,7 +463,7 @@ function print_mysql_connection_form()
 
 		// write settings.php, if not possible, display the needed contant
 		//
-		write_config_file($dbType, $dbHost, $dbName, $dbUser, $dbPass, $fsRoot);
+		write_config_file($dbType, $dbHost, $dbName, $dbUser, $dbPass, $fsRoot, $dbTablePrefix, $dbFilename);
 
 		echo "<hr><hr> Finished the setup, please delete setup.php and go on with the FFSync<hr><hr>";
 		echo <<<EOT
