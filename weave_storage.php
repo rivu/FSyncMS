@@ -133,7 +133,7 @@ class WeaveStorage
 
         try
         {
-            $select_stmt = 'select max(modified) from wbo where username = :username and collection = :collection';
+            $select_stmt = 'select max(modified) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->bindParam(':collection', $collection);
@@ -153,7 +153,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select distinct(collection) from wbo where username = :username';
+            $select_stmt = 'select distinct(collection) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -179,7 +179,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select collection, max(modified) as timestamp from wbo where username = :username group by collection';
+            $select_stmt = 'select collection, max(modified) as timestamp from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -203,7 +203,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select collection, count(*) as ct from wbo where username = :username group by collection';
+            $select_stmt = 'select collection, count(*) as ct from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -244,7 +244,7 @@ class WeaveStorage
 	{
         try
         {
-		    $insert_stmt = 'insert into wbo (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
+		    $insert_stmt = 'insert into ' . DATABASE_TABLE_PREFIX . 'wbo (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
 		            values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size)';
             $sth = $this->_dbh->prepare($insert_stmt);
 		    $sth->bindParam(':username', $this->_username);
@@ -271,7 +271,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select * from wbo where username = :username and collection = :collection and id = :id';
+            $select_stmt = 'select * from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -298,7 +298,7 @@ class WeaveStorage
 
     function update_object(&$wbo)
     {
-        $update = 'update wbo set ';
+        $update = 'update ' . DATABASE_TABLE_PREFIX . 'wbo set ';
         $params = array();
         $update_list = array();
 
@@ -379,7 +379,7 @@ class WeaveStorage
     {
         try
         {
-            $delete_stmt = 'delete from wbo where username = :username and collection = :collection and id = :id';
+            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . ' wbo where username = :username and collection = :collection and id = :id';
             $sth = $this->_dbh->prepare($delete_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -413,14 +413,14 @@ class WeaveStorage
                 return 1; #nothing to delete
             }
             $paramqs = array();
-            $select_stmt = 'delete from wbo where username = ? and collection = ? and id in (' . join(', ', array_pad($paramqs, count($params), '?')) . ')';
+            $select_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ? and id in (' . join(', ', array_pad($paramqs, count($params), '?')) . ')';
             array_unshift($params, $collection);
             array_unshift($params, $username);
         }
         else
         {
 
-            $select_stmt = 'delete from wbo where username = ? and collection = ?';
+            $select_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ?';
             $params[] = $this->_username;
             $params[] = $collection;
 
@@ -513,7 +513,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select * from wbo where username = :username and collection = :collection and id = :id';
+            $select_stmt = 'select * from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -542,7 +542,7 @@ class WeaveStorage
         $full_list = $full ? '*' : 'id';
 
 
-        $select_stmt = 'select '.$full_list.' from wbo where username = ? and collection = ?';
+        $select_stmt = 'select '.$full_list.' from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ?';
         $params[] = $this->_username;
         $params[] = $collection;
 
@@ -661,7 +661,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select round(sum(length(payload))/1024) from wbo where username = :username';
+            $select_stmt = 'select round(sum(length(payload))/1024) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -681,7 +681,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select collection, sum(payload_size) from wbo where username = :username group by collection';
+            $select_stmt = 'select collection, sum(payload_size) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -719,7 +719,7 @@ class WeaveStorage
         }
         try
         {
-            $delete_stmt = 'delete from wbo where username = :username';
+            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
             $sth = $this->_dbh->prepare($delete_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
@@ -744,13 +744,13 @@ class WeaveStorage
 
         try
         {
-            $delete_stmt = 'delete from users where username = :username';
+            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'users where username = :username';
             $sth = $this->_dbh->prepare($delete_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
             $sth->closeCursor();
 
-            $delete_wbo_stmt = 'delete from wbo where username = :username';
+            $delete_wbo_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
             $sth = $this->_dbh->prepare($delete_wbo_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
@@ -770,7 +770,7 @@ class WeaveStorage
 
         try
         {
-            $create_statement = 'insert into users values (:username, :md5)';
+            $create_statement = 'insert into ' . DATABASE_TABLE_PREFIX . 'users values (:username, :md5)';
 
             $sth = $this->_dbh->prepare($create_statement);
             $password = md5($password);
@@ -791,7 +791,7 @@ class WeaveStorage
     {
         try
         {
-            $update_statement = 'update users set md5 = :md5 where username = :username';
+            $update_statement = 'update ' . DATABASE_TABLE_PREFIX . 'users set md5 = :md5 where username = :username';
 
             $sth = $this->_dbh->prepare($update_statement);
             $password = md5($password);
@@ -812,7 +812,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select username from users where username = :username';
+            $select_stmt = 'select username from ' . DATABASE_TABLE_PREFIX . 'users where username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -837,7 +837,7 @@ class WeaveStorage
         log_error('auth-user: ' . $this->_username);
         try
         {
-            $select_stmt = 'select username from users where username = :username and md5 = :md5';
+            $select_stmt = 'select username from ' . DATABASE_TABLE_PREFIX . 'users where username = :username and md5 = :md5';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $password = md5($password);
