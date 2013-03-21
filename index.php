@@ -108,7 +108,7 @@
     // split path into parts and make sure that all values are properly initialized
     list($version, $username, $function, $collection, $id) = array_pad(explode('/', $path.'///'), 5, '');
     
-    if($version == 'user' || $version == 'misc')
+    if ($version == 'user' || $version == 'misc')
     {
         //asking for userApi -> user.php
         $include = true;
@@ -187,7 +187,7 @@
 						report_problem(WEAVE_ERROR_INVALID_PROTOCOL, 400);
 				}
 			}
-			elseif ($function == 'storage')
+			else if ($function == 'storage')
 			{
                 log_error('function storage');
 				if ($id) #retrieve a single record
@@ -330,7 +330,7 @@
 								$params['index_above'], $params['index_below']
 				);
 			}
-            else if($function == 'storage') // ich vermute mal storage reinigen
+            else if ($function == 'storage') // ich vermute mal storage reinigen
             {
                 if (!array_key_exists('HTTP_X_CONFIRM_DELETE', $_SERVER))
                 {

@@ -49,7 +49,6 @@ class WeaveStorage
 
     function __construct($username) 
     {
-
         $this->_username = $username;
 
         log_error('Initalizing DB connecion!');
@@ -57,8 +56,26 @@ class WeaveStorage
         try 
         {
         
-        	switch ( DATABASE_ENGINE )
+        	switch (DATABASE_ENGINE)
         	{
+        		case 'SQLITE': 
+        		{
+		            $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
+
+		            array_pop($path);
+		            array_push($path, DATABASE_DB);
+		            $db_name = implode('/', $path);
+
+		            if (!file_exists($db_name)) 
+		            {
+		                log_error('The required sqlite database is not present! $db_name');
+		            }
+
+		            log_error('Starting SQLite connection');
+		            $this->_dbh = new PDO('sqlite:' . $db_name);
+		            $this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        			break;
+        		}
         		case 'PGSQL': 
         		{
 		            log_error('Starting PostgreSQL connection');
@@ -69,24 +86,6 @@ class WeaveStorage
         		{
 		            log_error('Starting MySQL connection');
 		            $this->_dbh = new PDO('mysql:host='. DATABASE_HOST .';dbname='. DATABASE_DB, DATABASE_USER, DATABASE_PASSWORD);
-        			break;
-        		}
-        		case 'SQLITE': 
-        		{
-		            $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
-		            $db_name = SQLITE_FILE;
-		            array_pop($path);
-		            array_push($path, $db_name);
-		            $db_name = implode('/', $path);
-
-		            if ( ! file_exists($db_name) ) 
-		            {
-		                log_error('The required sqlite database is not present! $db_name');
-		            }
-
-		            log_error('Starting SQLite connection');
-		            $this->_dbh = new PDO('sqlite:' . $db_name);
-		            $this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         			break;
         		}
         	}
@@ -380,7 +379,7 @@ class WeaveStorage
     {
         try
         {
-            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . ' wbo where username = :username and collection = :collection and id = :id';
+            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
             $sth = $this->_dbh->prepare($delete_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -808,7 +807,6 @@ class WeaveStorage
         return 1;
     }
 
-    #function checks if user exists
     function exists_user()
     {
         try
