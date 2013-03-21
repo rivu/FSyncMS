@@ -84,7 +84,7 @@
 	
 	function fix_utf8_encoding($string)
 	{
-		if(mb_detect_encoding($string . ' ', 'UTF-8,ISO-8859-1') == 'UTF-8')
+		if (mb_detect_encoding($string . ' ', 'UTF-8,ISO-8859-1') == 'UTF-8')
 		{
 			return $string;
 		}
@@ -157,13 +157,13 @@
         #$user = strtolower($user);
         try
         {
-            if(!$db->exists_user())
+            if (!$db->exists_user())
             {
                 return 0;
             }
             return 1;
         }
-        catch(Exception $e)
+        catch (Exception $e)
         {
                header('X-Weave-Backoff: 1800');
                report_problem($e->getMessage(), $e->getCode());
@@ -296,7 +296,7 @@
 		if (array_key_exists('ids', $_GET))
 		{
 			$params['ids'] = array();
-			foreach(explode(',', $_GET['ids']) as $id)
+			foreach (explode(',', $_GET['ids']) as $id)
 			{
 				if (mb_strlen($id, '8bit') <= 64 && strpos($id, '/') === false)
 				{

@@ -50,6 +50,7 @@
         report_problem('Function not found', 404);
     }
     require_once 'settings.php';
+    
 	// basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
 	if (!empty($_SERVER['PATH_INFO']))
@@ -273,7 +274,7 @@
                 log_error('user.php: POST password ');
                 
                 // change pw in db
-                if($db->change_password($username, $new_pwd))
+                if ($db->change_password($username, $new_pwd))
                 {
                 	exit('success');
                 } 
