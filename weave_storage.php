@@ -10,7 +10,7 @@
 #
 # Software distributed under the License is distributed on an 'AS IS' basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
+# for the specific language governing rights AND limitations under the
 # License.
 #
 # The Original Code is Weave Basic Object Server
@@ -21,18 +21,19 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
-#	Toby Elliott (telliott@mozilla.com)
+#	
 #	Tobias Hollerung (tobias@hollerung.eu)
+#	Martin-Jan Sklorz (m.skl@lemsgbr.de)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the 'GPL'), or
 # the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
 # in which case the provisions of the GPL or the LGPL are applicable instead
 # of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
+# under the terms of either the GPL or the LGPL, AND not to allow others to
 # use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
+# decision by deleting the provisions above AND replace them with the notice
+# AND other provisions required by the GPL or the LGPL. If you do not delete
 # the provisions above, a recipient may use your version of this file under
 # the terms of any one of the MPL, the GPL or the LGPL.
 #
@@ -46,16 +47,21 @@ class WeaveStorage
 {
     private $_username;
     private $_dbh;
+    
+    private $_wbo_table;
+    private $_users_table;
 
     function __construct($username) 
     {
         $this->_username = $username;
 
+		$this->_wbo_table = $this->concatenate_prefix_with_table(DATABASE_TABLE_PREFIX, 'wbo');
+		$this->_users_table = $this->concatenate_prefix_with_table(DATABASE_TABLE_PREFIX, 'users');
+
         log_error('Initalizing DB connecion!');
         
         try 
         {
-        
         	switch (DATABASE_ENGINE)
         	{
         		case 'SQLITE': 
@@ -98,6 +104,27 @@ class WeaveStorage
         }
 
     }
+    
+    private function concatenate_prefix_with_table($prefix, $table_name)
+    {
+    	$return = '';
+    	
+    	if ($prefix)
+    	{
+    		$return = $prefix;
+    	
+			//add underscore if necessary
+			$return .= ($prefix[strlen($prefix)-1] != '_') ? '_' : '';
+			//add tablename
+			$return .= $table_name;
+    	}
+    	else
+    	{
+    		$return = $table_name;
+    	}
+    	
+    	return $return;
+    }
 
     function get_connection()
     {
@@ -133,7 +160,7 @@ class WeaveStorage
 
         try
         {
-            $select_stmt = 'select max(modified) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection';
+            $select_stmt = 'SELECT MAX(modified) FROM ' . $this->_wbo_table . ' WHERE username = :username AND collection = :collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->bindParam(':collection', $collection);
@@ -146,14 +173,14 @@ class WeaveStorage
         }
 
         $result = $sth->fetchColumn();
-        return round((float)$result, 2);
+        return ROUND((float)$result, 2);
     }
 
     function get_collection_list()
     {
         try
         {
-            $select_stmt = 'select distinct(collection) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
+            $select_stmt = 'SELECT DISTINCT(collection) FROM ' . $this->_wbo_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -179,7 +206,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select collection, max(modified) as timestamp from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
+            $select_stmt = 'SELECT collection, max(modified) AS timestamp FROM ' . $this->_wbo_table . ' WHERE username = :username GROUP BY collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -203,7 +230,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select collection, count(*) as ct from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
+            $select_stmt = 'SELECT collection, count(*) AS ct FROM ' . $this->_wbo_table . ' WHERE username = :username GROUP BY collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $sth->bindParam(':username', $this->_username);
             $sth->execute();
@@ -227,12 +254,12 @@ class WeaveStorage
 
     function store_object(&$wbo)
     {
-    	//object already exists -> update
+    	// object already exists -> update
 		if ($this->exists_object($wbo->collection(), $wbo->id()))
 		{
 			return $this->update_object($wbo);
 		}
-		//-> insert
+		// -> insert
 		else
 		{
 			return $this->create_object($wbo);
@@ -244,8 +271,8 @@ class WeaveStorage
 	{
         try
         {
-		    $insert_stmt = 'insert into ' . DATABASE_TABLE_PREFIX . 'wbo (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
-		            values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size)';
+		    $insert_stmt = 'INSERT INTO ' . $this->_wbo_table . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size)
+		            VALUES (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size)';
             $sth = $this->_dbh->prepare($insert_stmt);
 		    $sth->bindParam(':username', $this->_username);
 		    $sth->bindParam(':id', $wbo->id());
@@ -271,7 +298,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select * from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
+            $select_stmt = 'SELECT * FROM ' . $this->_wbo_table . ' WHERE username = :username AND collection = :collection AND id = :id';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -298,11 +325,11 @@ class WeaveStorage
 
     function update_object(&$wbo)
     {
-        $update = 'update ' . DATABASE_TABLE_PREFIX . 'wbo set ';
+        $UPDATE= 'UPDATE' . $this->_wbo_table . ' SET ';
         $params = array();
         $update_list = array();
 
-        #make sure we have an id and collection. No point in continuing otherwise
+        //make sure we have an id and collection. No point in continuing otherwise
         if (!$wbo->id() || !$wbo->collection())
         {
             error_log('Trying to update without a valid id or collection!');
@@ -335,10 +362,10 @@ class WeaveStorage
             $params[] = $wbo->payload_size();
         }
 
-# Don't modify the timestamp on a non-payload/non-parent change change
+		// Don't modify the timestamp on a non-payload/non-parent change change
         if ($wbo->parentid_exists() || $wbo->payload_exists())
         {
-#better make sure we have a modified date. Should have been handled earlier
+			//better make sure we have a modified date. Should have been handled earlier
             if (!$wbo->modified_exists())
             {
                 error_log('Called update_object with no defined timestamp. Please check');
@@ -354,9 +381,9 @@ class WeaveStorage
             return 0;
         }
 
-        $update .= join($update_list, ',');
+        $UPDATE.= join($update_list, ',');
 
-        $update .= ' where username = ? and collection = ? and id = ?';
+        $UPDATE.= ' WHERE username = ? AND collection = ? AND id = ?';
         $params[] = $this->_username;
         $params[] = $wbo->collection();
         $params[] = $wbo->id();
@@ -379,7 +406,7 @@ class WeaveStorage
     {
         try
         {
-            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
+            $delete_stmt = 'DELETE FROM ' . $this->_wbo_table . ' WHERE username = :username AND collection = :collection AND id = :id';
             $sth = $this->_dbh->prepare($delete_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -404,38 +431,38 @@ class WeaveStorage
 
         if ($limit || $offset || $sort)
         {
-#sqlite can't do sort or limit deletes without special compiled versions
-#so, we need to grab the set, then delete it manually.
+			//sqlite can't do sort or LIMITdeletes without special compiled versions
+			//so, we need to grab the set, then DELETE it manually.
 
             $params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $predecessorid, $newer, $older, $sort, $limit, $offset, $ids, $index_above, $index_below);
             if (!count($params))
             {
-                return 1; #nothing to delete
+                return 1; //nothing to delete
             }
             $paramqs = array();
-            $select_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ? and id in (' . join(', ', array_pad($paramqs, count($params), '?')) . ')';
+            $select_stmt = 'DELETE FROM ' . $this->_wbo_table . ' WHERE username = ? AND collection = ? AND id IN (' . join(', ', array_pad($paramqs, count($params), '?')) . ')';
             array_unshift($params, $collection);
             array_unshift($params, $username);
         }
         else
         {
 
-            $select_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ?';
+            $select_stmt = 'DELETE FROM ' . $this->_wbo_table . ' WHERE username = ? AND collection = ?';
             $params[] = $this->_username;
             $params[] = $collection;
 
 
             if ($id)
             {
-                $select_stmt .= ' and id = ?';
+                $select_stmt .= ' AND id = ?';
                 $params[] = $id;
             }
 
             if ($ids && count($ids) > 0)
             {
                 $qmarks = array();
-                $select_stmt .= ' and id in (';
-                foreach ($ids as $temp)
+                $select_stmt .= ' AND id IN (';
+                foreach ($ids AS $temp)
                 {
                     $params[] = $temp;
                     $qmarks[] = '?';
@@ -446,51 +473,51 @@ class WeaveStorage
 
             if ($parentid)
             {
-                $select_stmt .= ' and parentid = ?';
+                $select_stmt .= ' AND parentid = ?';
                 $params[] = $parentid;
             }
 
             if ($predecessorid)
             {
-                $select_stmt .= ' and predecessorid = ?';
+                $select_stmt .= ' AND predecessorid = ?';
                 $params[] = $parentid;
             }
 
             if ($index_above)
             {
-                $select_stmt .= ' and sortindex > ?';
+                $select_stmt .= ' AND sortindex > ?';
                 $params[] = $parentid;
             }
 
             if ($index_below)
             {
-                $select_stmt .= ' and sortindex < ?';
+                $select_stmt .= ' AND sortindex < ?';
                 $params[] = $parentid;
             }
 
             if ($newer)
             {
-                $select_stmt .= ' and modified > ?';
+                $select_stmt .= ' AND modified > ?';
                 $params[] = $newer;
             }
 
             if ($older)
             {
-                $select_stmt .= ' and modified < ?';
+                $select_stmt .= ' AND modified < ?';
                 $params[] = $older;
             }
 
             if ($sort == 'index')
             {
-                $select_stmt .= ' order by sortindex desc';
+                $select_stmt .= ' ORDER BY sortindex DESC';
             }
             else if ($sort == 'newest')
             {
-                $select_stmt .= ' order by modified desc';
+                $select_stmt .= ' ORDER BY modified DESC';
             }
             else if ($sort == 'oldest')
             {
-                $select_stmt .= ' order by modified';
+                $select_stmt .= ' ORDER BY modified';
             }
 
         }
@@ -513,7 +540,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select * from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username and collection = :collection and id = :id';
+            $select_stmt = 'SELECT * FROM ' . $this->_wbo_table . ' WHERE username = :username AND collection = :collection AND id = :id';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -542,22 +569,22 @@ class WeaveStorage
         $full_list = $full ? '*' : 'id';
 
 
-        $select_stmt = 'select '.$full_list.' from ' . DATABASE_TABLE_PREFIX . 'wbo where username = ? and collection = ?';
+        $select_stmt = 'SELECT '.$full_list.' FROM ' . $this->_wbo_table . ' WHERE username = ? AND collection = ?';
         $params[] = $this->_username;
         $params[] = $collection;
 
 
         if ($id)
         {
-            $select_stmt .= ' and id = ?';
+            $select_stmt .= ' AND id = ?';
             $params[] = $id;
         }
 
         if ($ids && count($ids) > 0)
         {
             $qmarks = array();
-            $select_stmt .= ' and id in (';
-            foreach ($ids as $temp)
+            $select_stmt .= ' AND id IN (';
+            foreach ($ids AS $temp)
             {
                 $params[] = $temp;
                 $qmarks[] = '?';
@@ -568,60 +595,60 @@ class WeaveStorage
 
         if ($parentid)
         {
-            $select_stmt .= ' and parentid = ?';
+            $select_stmt .= ' AND parentid = ?';
             $params[] = $parentid;
         }
 
 
         if ($predecessorid)
         {
-            $select_stmt .= ' and predecessorid = ?';
+            $select_stmt .= ' AND predecessorid = ?';
             $params[] = $predecessorid;
         }
 
         if ($index_above)
         {
-            $select_stmt .= ' and sortindex > ?';
+            $select_stmt .= ' AND sortindex > ?';
             $params[] = $parentid;
         }
 
         if ($index_below)
         {
-            $select_stmt .= ' and sortindex < ?';
+            $select_stmt .= ' AND sortindex < ?';
             $params[] = $parentid;
         }
 
         if ($newer)
         {
-            $select_stmt .= ' and modified > ?';
+            $select_stmt .= ' AND modified > ?';
             $params[] = $newer;
         }
 
         if ($older)
         {
-            $select_stmt .= ' and modified < ?';
+            $select_stmt .= ' AND modified < ?';
             $params[] = $older;
         }
 
         if ($sort == 'index')
         {
-            $select_stmt .= ' order by sortindex desc';
+            $select_stmt .= ' ORDER BY sortindex DESC';
         }
         else if ($sort == 'newest')
         {
-            $select_stmt .= ' order by modified desc';
+            $select_stmt .= ' ORDER BY modified DESC';
         }
         else if ($sort == 'oldest')
         {
-            $select_stmt .= ' order by modified';
+            $select_stmt .= ' ORDER BY modified';
         }
 
         if ($limit)
         {
-            $select_stmt .= ' limit ' . intval($limit);
+            $select_stmt .= ' LIMIT' . intval($limit);
             if ($offset)
             {
-                $select_stmt .= ' offset ' . intval($offset);
+                $select_stmt .= ' OFFSET ' . intval($offset);
             }
         }
 
@@ -659,9 +686,10 @@ class WeaveStorage
 
     function get_storage_total()
     {
+    	log_error('get_storage_total');
         try
         {
-            $select_stmt = 'select round(sum(length(payload))/1024) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
+            $select_stmt = 'SELECT ROUND(SUM(LENGTH(payload))/1024) FROM ' . $this->_wbo_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -679,9 +707,10 @@ class WeaveStorage
 
     function get_collection_storage_totals()
     {
+        log_error('get_collection_storage_totals');
         try
         {
-            $select_stmt = 'select collection, sum(payload_size) from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username group by collection';
+            $select_stmt = 'SELECT collection, SUM(payload_size) FROM ' . $this->_wbo_table . ' WHERE username = :username GROUP BY collection';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -696,7 +725,7 @@ class WeaveStorage
         $sth->closeCursor();
 
         $collections = array();
-        foreach ($results as $result)
+        foreach ($results AS $result)
         {
             $collections[$result[0]] = (int)$result[1];
         }
@@ -712,14 +741,14 @@ class WeaveStorage
 
     function delete_storage($username)
     {
-        log_error('delete storage');
+        log_error('delete_storage');
         if (!$username)
         {
             throw new Exception('3', 404);
         }
         try
         {
-            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
+            $delete_stmt = 'DELETE FROM ' . $this->_wbo_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($delete_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
@@ -727,7 +756,7 @@ class WeaveStorage
         }
         catch (PDOException $exception)
         { 
-            error_log('delete_user: ' . $exception->getMessage());
+            error_log('delete_storage: ' . $exception->getMessage());
             return 0;
         } 
         return 1;
@@ -736,7 +765,7 @@ class WeaveStorage
 
     function delete_user($username)
     {
-        log_error('delete user');
+        log_error('delete_user');
         if (!$username)
         {
             throw new Exception('3', 404);
@@ -744,13 +773,13 @@ class WeaveStorage
 
         try
         {
-            $delete_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'users where username = :username';
+            $delete_stmt = 'DELETE FROM ' . $this->_users_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($delete_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
             $sth->closeCursor();
 
-            $delete_wbo_stmt = 'delete from ' . DATABASE_TABLE_PREFIX . 'wbo where username = :username';
+            $delete_wbo_stmt = 'DELETE FROM ' . $this->_wbo_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($delete_wbo_stmt);
             $sth->bindParam(':username', $username);
             $sth->execute();
@@ -766,16 +795,14 @@ class WeaveStorage
 
     function create_user($username, $password)
     {
-        log_error('Create User - Username: '.$username.'|'.$password);
-
+        log_error('create_user: ' . $this->_username);
         try
         {
-            $create_statement = 'insert into ' . DATABASE_TABLE_PREFIX . 'users values (:username, :md5)';
+            $create_statement = 'INSERT INTO ' . $this->_users_table . ' VALUES (:username, :md5)';
 
             $sth = $this->_dbh->prepare($create_statement);
-            $password = md5($password);
             $sth->bindParam(':username', $username);
-            $sth->bindParam(':md5', $password);
+            $sth->bindParam(':md5', md5($password));
             $sth->execute();
         }
         catch (PDOException $exception)
@@ -789,9 +816,10 @@ class WeaveStorage
 
     function change_password($username, $password)
     {
+        log_error('change_password: ' . $this->_username);
         try
         {
-            $update_statement = 'update ' . DATABASE_TABLE_PREFIX . 'users set md5 = :md5 where username = :username';
+            $update_statement = 'UPDATE' . $this->_users_table . ' SET md5 = :md5 WHERE username = :username';
 
             $sth = $this->_dbh->prepare($update_statement);
             $password = md5($password);
@@ -811,7 +839,7 @@ class WeaveStorage
     {
         try
         {
-            $select_stmt = 'select username from ' . DATABASE_TABLE_PREFIX . 'users where username = :username';
+            $select_stmt = 'SELECT username FROM ' . $this->_users_table . ' WHERE username = :username';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $sth->bindParam(':username', $username);
@@ -833,10 +861,10 @@ class WeaveStorage
 
     function authenticate_user($password)
     {
-        log_error('auth-user: ' . $this->_username);
+        log_error('authenticate_user: ' . $this->_username);
         try
         {
-            $select_stmt = 'select username from ' . DATABASE_TABLE_PREFIX . 'users where username = :username and md5 = :md5';
+            $select_stmt = 'SELECT username FROM ' . $this->_users_table . ' WHERE username = :username AND md5 = :md5';
             $sth = $this->_dbh->prepare($select_stmt);
             $username = $this->_username;
             $password = md5($password);

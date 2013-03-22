@@ -22,6 +22,7 @@
 # 
 # Contributor(s):
 # Tobias Hollerung (tobias@hollerung.eu)
+# Martin-Jan Sklorz (m.skl@lemsgbr.de)
 # 
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -47,7 +48,7 @@ $db_user = null;
 $db_name = null;
 $db_pass = null;
 $db_host = null;
-$db_typeablePrefix = null;
+$db_table_prefix = null;
 // --------------------------------------------
 // variables end
 // --------------------------------------------
@@ -88,7 +89,7 @@ if (isset($_POST['dbpass']))
 
 if (isset($_POST['dbtableprefix']))
 {
-    $db_typeablePrefix = check_input($_POST['dbtableprefix']);
+    $db_table_prefix = check_input($_POST['dbtableprefix']);
 }
 // --------------------------------------------
 // post handling end
@@ -115,10 +116,10 @@ function check_input( $data )
     create the config file with the database type
     and the given connection credentials
 */
-function write_config_file($db_type, $db_host, $db_name, $db_user, $db_pass, $fsRoot, $db_typeablePrefix)
+function write_config_file($db_type, $db_host, $db_name, $db_user, $db_pass, $fsRoot, $db_table_prefix)
 {
 
-    // construct the name of config file
+    // construct the name
     $path = explode('/', $_SERVER['SCRIPT_FILENAME']);
     array_pop($path);
     array_push($path, 'settings.php');
@@ -126,44 +127,53 @@ function write_config_file($db_type, $db_host, $db_name, $db_user, $db_pass, $fs
 
     if (file_exists($cfg_file_name) && filesize( $cfg_file_name ) > 0)
     {
-        echo '<hr>The config file $cfg_file_name is already present</hr>';
+        echo '<h2>The configuration file "' . $cfg_file_name . '" is already present!</h2>';
         return;
     }
 
-    echo 'Creating cfg file: ' . $cfg_file_name;
+    echo 'Creating configuration file...<br/>';
 
-    // now build the content of the config file
-    $cfg_content  = '<?php\n\n';
-    $cfg_content .= '    // you can disable registration to the firefox sync server here,\n';
-    $cfg_content .= '    // by setting ENABLE_REGISTER to false\n';
-    $cfg_content .= '    // \n';
-    $cfg_content .= '    define("ENABLE_REGISTER", true);\n\n';
-
-    $cfg_content .= '    // firefox sync server url, this should end with a /\n';
-    $cfg_content .= '    // e.g. https://YourDomain.de/Folder_und_ggf_/index.php/\n';
-    $cfg_content .= '    // \n';
-    $cfg_content .= '    define("FSYNCMS_ROOT", "' . $fsRoot . '");\n\n';
-
-    $cfg_content .= '    // database connection details\n';
-    $cfg_content .= '    // \n';
-    $cfg_content .= '    // \n';
-    $cfg_content .= '    // database system you want to use\n';
-    $cfg_content .= '    // e.g. MYSQL, PGSQL, SQLITE\n';
-    $cfg_content .= '    define("DATABASE_ENGINE", "' . $db_type . '")\n';
-    $cfg_content .= '    // \n';
-    $cfg_content .= '    define("DATABASE_HOST", "' . $db_host . '");\n';
-    $cfg_content .= '    define("DATABASE_DB", "' . $db_name . '");\n';
-    $cfg_content .= '    define("DATABASE_USER", "' . $db_user . '");\n';
-    $cfg_content .= '    define("DATABASE_PASSWORD", "' . $db_pass . '");\n';
-    $cfg_content .= '    \n';
-    $cfg_content .= '    define("DATABASE_TABLE_PREFIX", "' . $db_typeablePrefix . '");\n';
+    // create content
+    $cfg_content  = "<?php\n\n";
+    $cfg_content .= "    // you can disable registration to the firefox sync server here,\n";
+    $cfg_content .= "    // by setting ENABLE_REGISTER to false\n";
+    $cfg_content .= "    // \n";
+    $cfg_content .= "    define(\"ENABLE_REGISTER\", true);\n\n";
     
-    $cfg_content .= '\n?>\n';
+    $cfg_content .= "    // enable / disable error logging\n";
+    $cfg_content .= "    define(\"LOG_THE_ERROR\", true);\n\n";
 
-    // now write everything
-    $cfg_file = fopen($cfg_file_name, 'a');
-    fputs($cfg_file, $cfg_content);
-    fclose($cfg_file);
+    $cfg_content .= "    // firefox sync server url, this should end with a /\n";
+    $cfg_content .= "    // e.g. https://YourDomain.de/Folder_und_ggf_/index.php/\n";
+    $cfg_content .= "    // \n";
+    $cfg_content .= "    define(\"FSYNCMS_ROOT\", \"" . $fsRoot . "\");\n\n";
+
+    $cfg_content .= "    // database system you want to use\n";
+    $cfg_content .= "    // e.g. MYSQL, PGSQL, SQLITE\n";
+    $cfg_content .= "    // \n";
+    $cfg_content .= "    define(\"DATABASE_ENGINE\", \"" . strtoupper($db_type) . "\");\n";
+    $cfg_content .= "    \n";
+    $cfg_content .= "    define(\"DATABASE_HOST\", \"" . $db_host . "\");\n";
+    $cfg_content .= "    define(\"DATABASE_DB\", \"" . $db_name . "\");\n";
+    $cfg_content .= "    define(\"DATABASE_USER\", \"" . $db_user . "\");\n";
+    $cfg_content .= "    define(\"DATABASE_PASSWORD\", \"" . $db_pass . "\");\n";
+    $cfg_content .= "    \n";
+    $cfg_content .= "    define(\"DATABASE_TABLE_PREFIX\", \"" . $db_table_prefix . "\");\n";
+    
+    $cfg_content .= "\n?>\n";
+
+    // write to disk
+    // @note: catch does not seem to work
+    try
+    {
+		$cfg_file = fopen($cfg_file_name, 'a');
+		fputs($cfg_file, $cfg_content);
+		fclose($cfg_file);
+	} catch (Exception $e) {
+		echo '<h2>Configuration file "' . $cfg_file_name . '" is not accessable!</h2><br/>
+			<h4>Create it manually:</h4><br/><hr>
+			<p>' . $cfg_content . '</p>';
+	}
 }
 
 
@@ -203,7 +213,7 @@ function echo_footer()
 	// check if we have no configuration at the moment
 	if (file_exists('settings.php') && filesize('settings.php') > 0 )
 	{
-		echo '<hr><h2>The setup looks completed, please finish it by deleting settings.php</h2><hr>';
+		echo '<hr><h2>The setup looks completed, please finish it by deleting setup.php!</h2><hr>';
 		exit;
 	}
 
@@ -221,14 +231,14 @@ function echo_footer()
 
 		echo_header('Setup FSyncMS - DB engine selection');
 
-		echo 'Which database type should be used?<br/>';
+		echo '<p>Which database type should be used?</p><br/>';
 		
 		echo_form_header();
 		
-		//SQLite
+		// SQLite
 		if (extension_loaded('pdo_sqlite'))
 		{
-		    echo '<input type="radio" name="dbType" value="sqlite" checked="checked" /> SQLite<br/>';
+		    echo '<input type="radio" name="dbtype" value="sqlite" checked="checked" /> SQLite<br/>';
 		    $valid_pdo_driver++;
 		}
 		else
@@ -236,10 +246,10 @@ function echo_footer()
 		    echo 'SQLite not possible (driver missing)!<br/>';
 		}
 		
-		//PostgreSQL
+		// PostgreSQL
 		if (extension_loaded('pdo_pgsql'))
 		{
-		    echo '<input type="radio" name="dbType" value="pgsql" /> PostgreSQL<br/>';
+		    echo '<input type="radio" name="dbtype" value="pgsql" /> PostgreSQL<br/>';
 		    $valid_pdo_driver++;
 		}
 		else
@@ -247,10 +257,10 @@ function echo_footer()
 		    echo 'MySQL not possible (driver missing)!<br/>';
 		}
 		
-		//MySQL
+		// MySQL
 		if (extension_loaded('pdo_mysql'))
 		{
-		    echo '<input type="radio" name="dbType" value="mysql" /> MySQL<br/>';
+		    echo '<input type="radio" name="dbtype" value="mysql" /> MySQL<br/>';
 		    $valid_pdo_driver++;
 		}
 		else
@@ -280,7 +290,7 @@ function echo_footer()
 		// first check if we have valid data
 		if (!extension_loaded('PDO'))
 		{
-		    echo 'ERROR - This type of database (' . $dbType . ') is not valid at the moment!';
+		    echo 'ERROR - This type of database (' . $db_type . ') is not supported at the moment!';
 		    exit();
 		}
 		
@@ -290,8 +300,12 @@ function echo_footer()
 		
 		echo '<table>
 					<tr>
-						<td>Instance name</td>
+						<td>Database name</td>
 						<td><input type="text" name="dbname" /></td>
+					</tr>
+					<tr>
+						<td>Table Prefix</td>
+						<td><input type="text" name="dbtableprefix" /></td>
 					</tr>';
 					
 		if ($db_type != 'sqlite')
@@ -307,17 +321,13 @@ function echo_footer()
 					<tr>
 						<td>Password</td>
 						<td><input type="password" name="dbpass" /></td>
-					</tr>
-					<tr>
-						<td>Table Prefix</td>
-						<td><input type="text" name="dbtableprefix" /></td>
 					</tr>';
 		}
 					
 		echo '	</table>
 
 				<input type="hidden" name="action" value="step3">
-				<input type="hidden" name="dbtype" value="'. $db_type .'">
+				<input type="hidden" name="dbtype" value="' . $db_type . '">
 				<p><input type="submit" value="OK"></p>';
 		
 		echo_form_footer();
@@ -349,15 +359,15 @@ function echo_footer()
 				    }
 				    else
 				    {
-				        echo("Creating sqlite weave storage: ". $db_name ."<br/>");
+				        echo('Creating sqlite weave storage: ' . $db_name . '<br/>');
 				        $db_handle = new PDO('sqlite:' . $db_name);
 				        $db_handle->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 				    }
 					break;
 				case 'pgsql':
-				    $db_handle = new PDO("pgsql:host=". $db_host .";dbname=". $db_name, $db_user, $db_pass);
+				    $db_handle = new PDO('pgsql:host='. $db_host . ';dbname=' . $db_name, $db_user, $db_pass);
 	
-				    $sth = $db_handle->prepare('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = ' . $db_typeablePrefix . 'wbo;');
+				    $sth = $db_handle->prepare('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = \'' . $db_table_prefix . '_wbo\';');
 				    $sth->execute();
 				    
 				    $count = $sth->rowCount();
@@ -367,9 +377,9 @@ function echo_footer()
 				    }
 				    break;
 				case 'mysql':
-				    $db_handle = new PDO("mysql:host=". $db_host .";dbname=". $db_name, $db_user, $db_pass);
+				    $db_handle = new PDO('mysql:host=' . $db_host . ';dbname=' . $db_name, $db_user, $db_pass);
 	
-				    $sth = $db_handle->prepare('SHOW TABLES LIKE ' . $db_typeablePrefix . 'wbo;');
+				    $sth = $db_handle->prepare('SHOW TABLES LIKE "' . $db_table_prefix . '_wbo";');
 				    $sth->execute();
 				    
 				    $count = $sth->rowCount();
@@ -392,17 +402,18 @@ function echo_footer()
 		}
 		else
 		{
-		    echo 'Now going to install the new database! Type is: $db_type<br/>';
+		    echo 'Installling the new database...<br/>
+		    	Type is: ' . $db_type . '<br/>';
 
 		    try
 		    {
-		        $create_statement = 'CREATE TABLE ' . $db_typeablePrefix . 'wbo ( username varchar(100), id varchar(65), collection varchar(100),
+		        $create_statement = 'CREATE TABLE ' . $db_table_prefix . '_wbo (username varchar(100), id varchar(65), collection varchar(100),
 		             parentid  varchar(65), predecessorid int, modified real, sortindex int,
-		             payload text, payload_size int, ttl int, primary key (username,collection,id));';
-		        $create_statement2 = 'CREATE TABLE ' . $db_typeablePrefix . 'users ( username varchar(255), md5 varchar(64), primary key (username));';
-		        $index1 = 'create index parentindex on ' . $db_typeablePrefix . 'wbo (username, parentid);';
-		        $index2 = 'create index predecessorindex on ' . $db_typeablePrefix . 'wbo (username, predecessorid);';
-		        $index3 = 'create index modifiedindex on ' . $db_typeablePrefix . 'wbo (username, collection, modified);';
+		             payload text, payload_size int, ttl int, PRIMARY KEY (username,collection,id));';
+		        $create_statement2 = 'CREATE TABLE ' . $db_table_prefix . '_users (username varchar(255), md5 varchar(64), primary key (username));';
+		        $index1 = 'CREATE INDEX parentindex ON ' . $db_table_prefix . '_wbo (username, parentid);';
+		        $index2 = 'CREATE INDEX predecessorindex ON ' . $db_table_prefix . '_wbo (username, predecessorid);';
+		        $index3 = 'CREATE INDEX modifiedindex ON ' . $db_table_prefix . '_wbo (username, collection, modified);';
 
 		        $sth = $db_handle->prepare($create_statement);
 		        $sth->execute();
@@ -414,7 +425,7 @@ function echo_footer()
 		        $sth->execute();
 		        $sth = $db_handle->prepare($index3);
 		        $sth->execute();
-		        echo 'Database created<br/>';
+		        echo 'Database created...<br/>';
 		    }
 		    catch(PDOException $exception)
 		    {
@@ -436,14 +447,12 @@ function echo_footer()
 		}   
 
 		// write settings.php, if not possible, display the needed content
-		write_config_file($db_type, $db_host, $db_name, $db_user, $db_pass, $fsRoot, $db_typeablePrefix);
+		write_config_file($db_type, $db_host, $db_name, $db_user, $db_pass, $fsRoot, $db_table_prefix);
 
-		echo '<hr><hr> Finished the setup, please delete setup.php and go on with the FFSync<hr><hr>';
-		echo '<hr><hr> 
-			<h4>This script has guessed the Address of your installation, this might not be accurate,<br/>
-		    Please check if this script can be reached by <a href="$fsRoot">$fsRoot</a>.<br/>
-		    If thats not the case you have to ajust the settings.php<br />
-		    </h4>';
+		echo '<hr><h2> Finished setup, please delete setup.php!</h2><hr>
+			<h4>This script has guessed the Address of your installation, this might not be accurate.<br/>
+		    Please check if this script can be reached by <a href="' . $fsRoot . '">' . $fsRoot . '</a> and also make sure to allow any self signed SSL certificate.<br/>
+		    If thats not the case you have to ajust the settings.php manually!<br/></h4>';
 	
 		echo_footer();
 	}

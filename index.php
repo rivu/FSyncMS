@@ -22,7 +22,8 @@
 #
 # Contributor(s):
 #	Toby Elliott (telliott@mozilla.com)
-#   Luca Tettamanti
+#	Luca Tettamanti
+#	Martin-Jan Sklorz (m.skl@lemsgbr.de)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the 'GPL'), or
@@ -46,13 +47,13 @@
     }
     else if (!file_exists('settings.php'))
     {
-        echo '<hr><h2>Maybe the setup is not completed, missing settings.php</h2><hr>'; 
+        echo '<hr><h2>Maybe the setup is not completed, missing settings.php!</h2><hr>'; 
         exit;
 
     }
     else if (file_exists('setup.php'))
     {
-        echo '<hr><h2>Maybe the setup is not completed, else please delete setup.php</h2><hr>'; 
+        echo '<hr><h2>Maybe the setup is not completed, else please delete setup.php!</h2><hr>'; 
         exit;
     }
 
@@ -61,12 +62,12 @@
 	require_once 'weave_utils.php';
 
     require_once 'WBOJsonOutput.php';
-	//header('Content-type: application/json');
+	// header('Content-type: application/json');
 
 	$server_time = round(microtime(1), 2);
 	header('X-Weave-Timestamp: ' . $server_time);
 
-	# Basic path extraction and validation. No point in going on if these are missing
+	// Basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
 	if (!empty($_SERVER['PATH_INFO']))
 	{
@@ -79,12 +80,12 @@
     else if (!empty($_SERVER['REQUEST_URI']))
     {
         log_error('experimental path');
-        # this is kind of an experimental try, i needed it so i build it,
-        # but that doesent mean that it does work... well it works for me
-        # and it shouldnt break anything...
+        // this is kind of an experimental try, i needed it so i build it,
+        // but that doesent mean that it does work... well it works for me
+        // and it shouldnt break anything...
         $path = $_SERVER['REQUEST_URI'];
         $lastfolder = substr(FSYNCMS_ROOT, strrpos(FSYNCMS_ROOT, '/', -2));
-        $path = substr($path, (strpos($path,$lastfolder) + strlen($lastfolder)-1)); #chop the lead slash
+        $path = substr($path, (strpos($path,$lastfolder) + strlen($lastfolder)-1)); //chop the lead slash
         if (strpos($path,'?') != false)
         {
             $path = substr($path, 0, strpos($path,'?')); //remove php arguments
@@ -96,7 +97,7 @@
 		report_problem('No path found', 404);
 	}
     
-	$path = substr($path, 1); #chop the lead slash
+	$path = substr($path, 1); //chop the lead slash
 	log_error('start request_____'.$path);
 	
     // ensure that we got a valid request
@@ -133,7 +134,7 @@
 		report_problem(WEAVE_ERROR_INVALID_USERNAME, 400);
 	}
 
-	#only a delete has meaning without a collection
+	// only a delete has meaning without a collection
 	if ($collection)
 	{
 		if (!validate_collection($collection))
@@ -147,7 +148,7 @@
 	}
 
 
-	#quick check to make sure that any non-storage function calls are just using GET
+	// quick check to make sure that any non-storage function calls are just using GET
 	if ($function != 'storage' && $_SERVER['REQUEST_METHOD'] != 'GET')
 	{
 		report_problem(WEAVE_ERROR_INVALID_PROTOCOL, 400);
@@ -155,15 +156,15 @@
 
 
 
-	#user passes preliminaries, connections made, onto actually getting the data
+	// user passes preliminaries, connections made, onto actually getting the data
 	try
 	{
 		$db = new WeaveStorage($username);
 
-		#Auth the user
+		// Auth the user
 		verify_user($username, $db);
 
-		#user passes preliminaries, connections made, onto actually getting the data
+		// user passes preliminaries, connections made, onto actually getting the data
 		if ($_SERVER['REQUEST_METHOD'] == 'GET')
 		{
 			if ($function == 'info')
@@ -180,7 +181,7 @@
 						$results = $db->get_collection_storage_totals();
 						foreach (array_keys($results) as $collection)
 						{
-							$results[$collection] = ceil($results[$collection] / 1024); #converting to k from bytes
+							$results[$collection] = ceil($results[$collection] / 1024); //converting to k from bytes
 						}
 						exit(json_encode($results));
 					default:
@@ -190,9 +191,9 @@
 			else if ($function == 'storage')
 			{
                 log_error('function storage');
-				if ($id) #retrieve a single record
+				if ($id) // retrieve a single record
 				{
-					$wbo = $db->retrieve_objects($collection, $id, 1); #get the full contents of one record
+					$wbo = $db->retrieve_objects($collection, $id, 1); //get the full contents of one record
 					if (count($wbo) > 0)
 					{
 						$item = array_shift($wbo);
@@ -203,7 +204,7 @@
 						report_problem('record not found', 404);
 					}
 				}
-				else #retrieve a batch of records. Sadly, due to potential record sizes, have the storage object stream the output...
+				else // retrieve a batch of records. Sadly, due to potential record sizes, have the storage object stream the output...
 				{
                     log_error('retrieve a batch');
 					$full = array_key_exists('full', $_GET) && $_GET['full'];
@@ -223,7 +224,7 @@
 				}
 			}
 		}
-		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
+		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') // add a single record to the server
 		{
 			$wbo = new wbo();
 			if (!$wbo->extract_json(get_json()))
@@ -234,18 +235,18 @@
 			check_quota($db);
 			check_timestamp($collection, $db);
 
-			#use the url if the json object doesn't have an id
+			// use the url if the json object doesn't have an id
 			if (!$wbo->id() && $id)
 			{
 				$wbo->id($id);
 			}
 
 			$wbo->collection($collection);
-			$wbo->modified($server_time); #current microtime
+			$wbo->modified($server_time); // current microtime
 
 			if ($wbo->validate())
 			{
-				#if there's no payload (as opposed to blank), then update the metadata
+				// if there's no payload (as opposed to blank), then update the metadata
 				if ($wbo->payload_exists())
 				{
 					$db->store_object($wbo);
@@ -289,7 +290,7 @@
 
 				if ($wbo->validate())
 				{
-					#if there's no payload (as opposed to blank), then update the metadata
+					// if there's no payload (as opposed to blank), then update the metadata
 					if ($wbo->payload_exists())
 					{
 						$db->store_object($wbo);
@@ -353,7 +354,7 @@
 		}
 		else
 		{
-			#bad protocol. There are protocols left? HEAD, I guess.
+			// bad protocol. There are protocols left? HEAD, I guess.
 			report_problem(1, 400);
 		}
 	}

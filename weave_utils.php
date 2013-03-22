@@ -34,7 +34,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
-	#Error constants
+	//Error constants
 	define ('WEAVE_ERROR_INVALID_PROTOCOL', 1);
 	define ('WEAVE_ERROR_INCORRECT_CAPTCHA', 2);
 	define ('WEAVE_ERROR_INVALID_USERNAME', 3);
@@ -55,9 +55,9 @@
         if (LOG_THE_ERROR) 
         {
             $datei = fopen('/tmp/FSyncMS-error.txt','a');
-            $fmsg = sprintf('$msg\n');
-            fputs($datei,$fmsg);
-            fputs($datei,'Server '.print_r( $_SERVER, true));
+            $fmsg = sprintf("$msg\n");
+            fputs($datei, $fmsg);
+            fputs($datei, 'Server ' . print_r($_SERVER, true));
             fclose($datei);
         }
     }
@@ -70,7 +70,7 @@
 					'404' => '404 Not Found',
 					'412' => '412 Precondition Failed',
 					'503' => '503 Service Unavailable');
-		header('HTTP/1.1 ' . $headers{$code},true,$code);
+		header('HTTP/1.1 ' . $headers{$code}, true, $code);
 		
 		if ($code == 401)
 		{
@@ -96,13 +96,13 @@
     
     function get_phpinput()
     {
-        #stupid php being helpful with input data...
+        // stupid php being helpful with input data...
         $putdata = fopen('php://input', 'r');
         $string = '';
         while ($data = fread($putdata,2048))
         {
         	$string .= $data;
-        } //hier will man ein limit einbauen
+        } // hier will man ein limit einbauen
         return $string;
     }
 	function get_json()
@@ -151,10 +151,10 @@
 		return preg_match('/[^A-Z0-9?=._-]/i', $collection) ? false : true;
 	}
 	
-    #user exitsts
+    // user exitsts
     function exists_user( $db)
     {
-        #$user = strtolower($user);
+        // $user = strtolower($user);
         try
         {
             if (!$db->exists_user())
@@ -170,7 +170,7 @@
         }
     }
     
-	# Gets the username and password out of the http headers, and checks them against the auth
+	// Gets the username and password out of the http headers, and checks them against the auth
 	function verify_user($url_user, $db)
 	{
 		if (!$url_user || !preg_match('/^[A-Z0-9._-]+$/i', $url_user))
@@ -226,7 +226,7 @@
 			}
 		}
 
-		if (!$auth_user || ! $auth_pw) #do this first to avoid the cryptic error message if auth is missing
+		if (!$auth_user || ! $auth_pw) // do this first to avoid the cryptic error message if auth is missing
 		{
             log_error('auth failed 1 {');
             log_error(' user pw: '.$auth_user.' | '.$auth_pw);

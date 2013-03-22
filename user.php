@@ -1,4 +1,5 @@
 <?php
+
 # ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1/GPL 2.0/LGPL 2.1
 #
@@ -35,13 +36,13 @@
 
 
     /*
-    ## DESCRIPTION: Implementation of user api v1.0 
-    ##
-    ## AUTHOR: balu
-    ##
-    ## DATE: 20.02.2012
-    ## 
-    ## VERSION: 0.1
+    // DESCRIPTION: Implementation of user api v1.0 
+    //
+    // AUTHOR: balu
+    //
+    // DATE: 20.02.2012
+    // 
+    // VERSION: 0.1
     */
     require_once 'weave_utils.php';
     if (!$include) //file should only be used in context of index.php
@@ -83,7 +84,7 @@
         	log_error('user.php: No path found');
 			report_problem('No path found', 404);
 	}
-	$path = substr($path, 1); #chop the lead slash
+	$path = substr($path, 1); // chop the lead slash
 	// split path into parts and make sure that all values are properly initialized
 	list($preinstr, $version, $username, $function, $collection, $id) = array_pad(explode('/', $path.'///'), 6, '');
 
@@ -98,7 +99,7 @@
 		report_problem('Function not found', 404);
 	}
     
-	//if captcha 
+	// if captcha 
     if (($preinstr =='misc') && ($_SERVER['REQUEST_METHOD'] == 'GET') && ($username =='captcha_html'))
     {
         if (ENABLE_REGISTER)
@@ -111,16 +112,15 @@
         }
     }
     
-    //probably no need but...
+    // probably no needed but...
     header('Content-type: application/json');
-    //if ($function != 'info' && $function != 'storage')
-	//	report_problem(WEAVE_ERROR_FUNCTION_NOT_SUPPORTED, 400);
+
     if (!validate_username($username)) 
 	{
         log_error( 'invalid user');
         report_problem(WEAVE_ERROR_INVALID_USERNAME, 400);
     }
-	#user passes preliminaries, connections made, onto actually getting the data
+	// user passes preliminaries, connections made, onto actually getting the data
 	try
 	{
         if ($_SERVER['REQUEST_METHOD'] == 'GET')
@@ -132,7 +132,7 @@
             {
                 // reply node server for user
 
-                //to be compatible with users how use /index.php/ in their path
+                // to be compatible with users how use /index.php/ in their path
                 /*$index ='https://';
                 if (!isset($_SERVER['HTTPS'])) 
                     $index = 'http://';
@@ -146,7 +146,8 @@
                 if (isset($_SERVER['HTTPS']))
                 {
                     exit('https://' . parse_url(FSYNCMS_ROOT, PHP_URL_HOST) . parse_url(FSYNCMS_ROOT, PHP_URL_PATH));
-                } else
+                }
+                else
                 {
                     // allow http requests because use of self-signed certificates
                     // on iPhone/iPod Touch devices doesn't work
@@ -155,7 +156,7 @@
             }
             else if ($function == 'password_reset')
             {
-                //email mit neuem pw senden
+                // email mit neuem pw senden
                 /*
                 Possible errors:
 
@@ -166,11 +167,11 @@
                 */
                 report_problem(WEAVE_ERROR_NO_EMAIL, 400);
             }
-            //node/weave
+            // node/weave
 		    else if ($function == '' && $collection == '' && $id =='') //frage nach freiem usernamen
-            //User exists
+            // user exists
             {
-                //$db = new WeaveStorage($username);
+                // $db = new WeaveStorage($username);
                 if (exists_user($db))
                 {
                     exit(json_encode(1));
@@ -191,7 +192,7 @@
             if (ENABLE_REGISTER)
             {
 		        $db = new WeaveStorage(null);
-		        //Requests that an account be created for username. 
+		        // Requests that an account be created for username. 
 		        /*
 		        The JSON payload should include
 		        Field   Description
@@ -268,7 +269,7 @@
             
             if ($function == 'password')
             {
-                #auth the user
+                // auth the user
                 verify_user($username, $db);
                 $new_pwd = get_phpinput();
                 log_error('user.php: POST password ');
@@ -287,7 +288,7 @@
             }
             else if ($function == 'email')
             {
-                //change email adr
+                // change email adr
             }
             else
             {
