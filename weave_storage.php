@@ -325,7 +325,7 @@ class WeaveStorage
 
     function update_object(&$wbo)
     {
-        $UPDATE= 'UPDATE' . $this->_wbo_table . ' SET ';
+        $update_stmt = 'UPDATE' . $this->_wbo_table . ' SET ';
         $params = array();
         $update_list = array();
 
@@ -381,16 +381,16 @@ class WeaveStorage
             return 0;
         }
 
-        $UPDATE.= join($update_list, ',');
+        $update_stmt .= join($update_list, ',');
 
-        $UPDATE.= ' WHERE username = ? AND collection = ? AND id = ?';
+        $update_stmt .= ' WHERE username = ? AND collection = ? AND id = ?';
         $params[] = $this->_username;
         $params[] = $wbo->collection();
         $params[] = $wbo->id();
 
         try
         {
-            $sth = $this->_dbh->prepare($update);
+            $sth = $this->_dbh->prepare($update_stmt);
             $sth->execute($params);
         }
         catch (PDOException $exception)
