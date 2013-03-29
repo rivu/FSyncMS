@@ -325,7 +325,7 @@ class WeaveStorage
 
     function update_object(&$wbo)
     {
-        $update_stmt = 'UPDATE' . $this->_wbo_table . ' SET ';
+        $update_stmt = 'UPDATE ' . $this->_wbo_table . ' SET ';
         $params = array();
         $update_list = array();
 
@@ -819,7 +819,7 @@ class WeaveStorage
         log_error('change_password: ' . $this->_username);
         try
         {
-            $update_statement = 'UPDATE' . $this->_users_table . ' SET md5 = :md5 WHERE username = :username';
+            $update_statement = 'UPDATE ' . $this->_users_table . ' SET md5 = :md5 WHERE username = :username';
 
             $sth = $this->_dbh->prepare($update_statement);
             $password = md5($password);
